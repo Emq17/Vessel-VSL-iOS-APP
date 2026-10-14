@@ -24,6 +24,7 @@ extension ContentView {
 
             if sleepPeriod == .today {
                 let latest = latestSleepSummary
+                sleepStagesChart
                 VSLMetricGrid(metrics: [
                     VSLMetric(id: "Last night sleep", value: VSLFormat.time(latest.total), unit: ""),
                     VSLMetric(id: "REM", value: VSLFormat.time(latest.rem), unit: ""),
@@ -31,7 +32,6 @@ extension ContentView {
                     VSLMetric(id: "Core", value: VSLFormat.time(latest.core), unit: ""),
                     VSLMetric(id: "Awake", value: VSLFormat.time(latest.awake), unit: "")
                 ])
-                sleepStagesChart
             } else {
                 let summary = sleepSummary
                 VSLMetricGrid(metrics: [
