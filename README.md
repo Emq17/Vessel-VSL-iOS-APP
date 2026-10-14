@@ -11,8 +11,7 @@ A native iOS app that brings training, health, sleep, focus, and journaling into
   <img src="screenshots/focus.PNG" width="185" alt="Focus timer and daily tasks" />
   <img src="screenshots/performance.PNG" width="185" alt="Performance workout analysis" />
   <img src="screenshots/health.PNG" width="185" alt="Health analytics and blood pressure" />
-  <img src="screenshots/sleep.PNG" width="185" alt="Sleep stage timeline" />
-  <img src="screenshots/journal.PNG" width="185" alt="Journal and mood tracking" />
+  <img src="screenshots/sleep.PNG" width="185" alt="Sleep stage timeline" /> 
 </p>
 
 ## Features
