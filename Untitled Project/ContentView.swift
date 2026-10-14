@@ -7,6 +7,7 @@ struct ContentView: View {
     @StateObject var health = VSLHealthStore()
     @StateObject var focusStore = VSLFocusStore()
     @StateObject var journalStore = VSLJournalStore()
+    @StateObject var cardiovascular = VSLCardiovascularStore()
     @Environment(\.scenePhase) var scenePhase
     @State var newFocusTask = ""
     @State var selectedFocusDay = Calendar.current.startOfDay(for: Date())
@@ -50,6 +51,14 @@ struct ContentView: View {
     @State var healthCalendarExpanded = true
     @State var healthCalendarMonth: Date = .now
     @State var selectedHealthDay: Date? = nil
+    @State var heartPeriod: VSLPeriod = .today
+    @State var heartCustomStart = Calendar.current.date(byAdding: .day, value: -6, to: .now) ?? .now
+    @State var heartCustomEnd = Date()
+    @State var selectedPressureReadingID: UUID? = nil
+    @State var bloodPressurePeriod: VSLPeriod = .today
+    @State var bloodPressureCustomStart = Calendar.current.date(byAdding: .day, value: -6, to: .now) ?? .now
+    @State var bloodPressureCustomEnd = Date()
+
     @State var nutritionCustomStart =
         Calendar.current.date(
             byAdding: .day,
@@ -176,7 +185,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: health.connected) { _, connected in
-            if connected { loadLifestyle() }
+            if connected { loadLifestyle(); cardiovascular.refresh() }
         }
         .onChange(of: health.workouts) { _, workouts in
             if selectedWorkoutID == nil {
@@ -188,11 +197,12 @@ struct ContentView: View {
         }
         .onChange(of: tab) { _, newTab in
             if newTab == .health || newTab == .sleep {
+                if newTab == .health { cardiovascular.refresh() }
                 loadLifestyle()
             }
         }
         .onChange(of: healthSection) { _, _ in
-            if tab == .health { loadLifestyle() }
+            if tab == .health { loadLifestyle(); cardiovascular.refresh() }
         }
         .onChange(of: nutritionPeriod) { _, _ in loadLifestyle() }
         .onChange(of: weightPeriod) { _, _ in loadLifestyle() }

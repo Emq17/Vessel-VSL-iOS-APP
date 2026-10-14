@@ -10,10 +10,13 @@ extension ContentView {
                         focusedField = nil
                         healthSection = section
                     } label: {
-                        Text(section.rawValue)
-                            .font(.system(size: 10, weight: .black))
+                        Text(section == .bloodPressure ? "BLOOD\nPRESSURE" : section.rawValue)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.72)
+                            .font(.system(size: 9, weight: .black))
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
+                            .frame(height: 42)
                             .foregroundStyle(healthSection == section ? VSL.background : .white)
                             .background(healthSection == section ? VSL.lime : VSL.card,
                                         in: RoundedRectangle(cornerRadius: 10))
@@ -25,6 +28,8 @@ extension ContentView {
             switch healthSection {
             case .nutrition: nutritionContent
             case .weight: weightContent
+            case .bloodPressure: cardiovascularContent(isBloodPressure: true)
+            case .heart: cardiovascularContent(isBloodPressure: false)
             case .medications: medicationsContent
             }
         }
@@ -82,13 +87,23 @@ extension ContentView {
                             let hasMedication = healthSection == .medications && medicationLogs.contains {
                                 calendar.isDate($0.date, inSameDayAs: date)
                             }
-                            let hasData = hasWeighIn || hasNutrition || hasMedication
+                            let hasCardio = (healthSection == .heart || healthSection == .bloodPressure)
+                                && cardiovascular.hasReading(on: date, bloodPressure: healthSection == .bloodPressure)
+                            let hasData = hasWeighIn || hasNutrition || hasMedication || hasCardio
                             Button {
                                 selectedHealthDay = date
                                 if healthSection == .weight {
                                     weightCustomStart = date
                                     weightCustomEnd = calendar.date(byAdding: .day, value: 1, to: date)?.addingTimeInterval(-1) ?? date
                                     weightPeriod = .custom
+                                } else if healthSection == .bloodPressure {
+                                    bloodPressurePeriod = .custom
+                                    bloodPressureCustomStart = date
+                                    bloodPressureCustomEnd = calendar.date(byAdding: .day, value: 1, to: date)?.addingTimeInterval(-1) ?? date
+                                } else if healthSection == .heart {
+                                    heartPeriod = .custom
+                                    heartCustomStart = date
+                                    heartCustomEnd = calendar.date(byAdding: .day, value: 1, to: date)?.addingTimeInterval(-1) ?? date
                                 } else if healthSection == .nutrition {
                                     nutritionCustomStart = date
                                     nutritionCustomEnd = calendar.date(byAdding: .day, value: 1, to: date)?.addingTimeInterval(-1) ?? date
@@ -118,6 +133,8 @@ extension ContentView {
                         selectedHealthDay = nil
                         if healthSection == .weight { weightPeriod = .today }
                         if healthSection == .nutrition { nutritionPeriod = .today }
+                        if healthSection == .bloodPressure { bloodPressurePeriod = .today }
+                        if healthSection == .heart { heartPeriod = .today }
                     }
                     .font(.caption).foregroundStyle(VSL.lime)
                 }

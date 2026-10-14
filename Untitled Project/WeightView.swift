@@ -49,10 +49,10 @@ extension ContentView {
             VSLSection(title: "NUTRITION CONTEXT", number: "03", color: VSL.lime)
             let totals = weightNutritionTotals
             VSLMetricGrid(metrics: [
-                VSLMetric(id: weightPeriod == .today ? "Calories today" : "Logged calories / day", value: VSLFormat.number(totals[0].map { $0 / Double(days(in: .weight)) }), unit: "kcal"),
-                VSLMetric(id: weightPeriod == .today ? "Carbs today" : "Logged carbs / day", value: VSLFormat.number(totals[1].map { $0 / Double(days(in: .weight)) }), unit: "g"),
-                VSLMetric(id: weightPeriod == .today ? "Protein today" : "Logged protein / day", value: VSLFormat.number(totals[2].map { $0 / Double(days(in: .weight)) }), unit: "g"),
-                VSLMetric(id: weightPeriod == .today ? "Fat today" : "Logged fat / day", value: VSLFormat.number(totals[3].map { $0 / Double(days(in: .weight)) }), unit: "g")
+                VSLMetric(id: weightPeriod == .today ? "Calories today" : "Avg calories / day", value: VSLFormat.number(totals[0].map { $0 / Double(days(in: .weight)) }), unit: "kcal"),
+                VSLMetric(id: weightPeriod == .today ? "Carbs today" : "Avg carbs / day", value: VSLFormat.number(totals[1].map { $0 / Double(days(in: .weight)) }), unit: "g"),
+                VSLMetric(id: weightPeriod == .today ? "Protein today" : "Avg protein / day", value: VSLFormat.number(totals[2].map { $0 / Double(days(in: .weight)) }), unit: "g"),
+                VSLMetric(id: weightPeriod == .today ? "Fat today" : "Avg fat / day", value: VSLFormat.number(totals[3].map { $0 / Double(days(in: .weight)) }), unit: "g")
             ])
         }
     }

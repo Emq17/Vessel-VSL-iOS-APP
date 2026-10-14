@@ -70,6 +70,8 @@ struct VSLMedicationLog: Identifiable, Codable {
 
 enum VSLHealthSection: String, CaseIterable {
     case weight = "WEIGHT"
+    case bloodPressure = "BLOOD PRESSURE"
+    case heart = "HEART RATE"
     case nutrition = "NUTRITION"
     case medications = "MEDS"
 }

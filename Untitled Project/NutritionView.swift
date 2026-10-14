@@ -1,5 +1,6 @@
 import SwiftUI
 import HealthKit
+import Charts
 
 extension ContentView {
     // MARK: - Nutrition
@@ -24,46 +25,55 @@ extension ContentView {
 
             let values = nutritionSummary
 
-            VSLMetricGrid(metrics: [
-                VSLMetric(
-                    id: "Total calories",
-                    value: VSLFormat.number(values[0]),
-                    unit: "kcal"
-                ),
-                VSLMetric(
-                    id: nutritionPeriod == .today ? "Calories today" : "Avg daily calories",
-                    value: VSLFormat.number(
-                        values[0].map {
-                            $0 / Double(days(in: .nutrition))
+            if let carbs = values[1], let protein = values[2], let fat = values[3],
+               carbs + protein + fat > 0 {
+                let macroValues: [(name: String, kcal: Double, color: Color)] = [
+                    ("CARBS", carbs * 4, VSL.lime),
+                    ("PROTEIN", protein * 4, .cyan),
+                    ("FAT", fat * 9, .orange)
+                ]
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("MACRO DISTRIBUTION")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(VSL.muted)
+                    Chart(macroValues, id: \.name) { macro in
+                        SectorMark(angle: .value("Energy", macro.kcal),
+                                   innerRadius: .ratio(0.58),
+                                   angularInset: 2)
+                            .foregroundStyle(macro.color)
+                    }
+                    .chartLegend(.hidden)
+                    .frame(height: 190)
+                    HStack(spacing: 12) {
+                        ForEach(macroValues, id: \.name) { macro in
+                            HStack(spacing: 4) {
+                                Circle().fill(macro.color).frame(width: 6, height: 6)
+                                Text(macro.name)
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(VSL.muted)
+                            }
                         }
-                    ),
-                    unit: "kcal"
-                ),
-                VSLMetric(
-                    id: "Total carbs",
-                    value: VSLFormat.number(values[1]),
-                    unit: "g"
-                ),
-                VSLMetric(
-                    id: nutritionPeriod == .today ? "Carbs today" : "Avg daily carbs",
-                    value: VSLFormat.number(
-                        values[1].map {
-                            $0 / Double(days(in: .nutrition))
-                        },
-                        decimals: 1
-                    ),
-                    unit: "g"
-                ),
-                VSLMetric(
-                    id: "Total protein",
-                    value: VSLFormat.number(values[2]),
-                    unit: "g"
-                ),
-                VSLMetric(
-                    id: "Total fat",
-                    value: VSLFormat.number(values[3]),
-                    unit: "g"
-                )
+                    }
+                    Text("Estimated energy from recorded macros (4/4/9 kcal per gram)")
+                        .font(.caption2).foregroundStyle(VSL.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(VSL.card, in: RoundedRectangle(cornerRadius: 12))
+            }
+
+            let averageDays = max(1, days(in: .nutrition))
+            let dailyValues = values.map { value in value.map { $0 / Double(averageDays) } }
+            let isToday = nutritionPeriod == .today
+            VSLMetricGrid(metrics: [
+                VSLMetric(id: isToday ? "Calories today" : "Avg calories / day",
+                          value: VSLFormat.number(dailyValues[0]), unit: "kcal"),
+                VSLMetric(id: isToday ? "Carbs today" : "Avg carbs / day",
+                          value: VSLFormat.number(dailyValues[1], decimals: 1), unit: "g"),
+                VSLMetric(id: isToday ? "Protein today" : "Avg protein / day",
+                          value: VSLFormat.number(dailyValues[2], decimals: 1), unit: "g"),
+                VSLMetric(id: isToday ? "Fat today" : "Avg fat / day",
+                          value: VSLFormat.number(dailyValues[3], decimals: 1), unit: "g")
             ])
 
             let sources = Set(nutrition.values.flatMap { $0 }.map { $0.sourceRevision.source.name })
@@ -76,7 +86,7 @@ extension ContentView {
                 }
             }
 
-            notice(nutritionPeriod == .today ? "Today shows recorded nutrition totals, not averages." : "Nutrition values come from Apple Health entries. Daily averages include every calendar day in the selected range, even days without logged meals.")
+
         }
     }
 
