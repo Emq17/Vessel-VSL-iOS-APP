@@ -115,7 +115,7 @@ extension ContentView {
                                         .font(.system(size: 13, weight: selected ? .bold : .regular))
                                     Circle()
                                         .fill(hasData ? (selected ? Color.black : VSL.lime) : Color.clear)
-                                        .frame(width: 4, height: 4)
+                                        .frame(width: 6, height: 6)
                                 }
                                 .frame(maxWidth: .infinity, minHeight: 34)
                                 .foregroundStyle(selected ? Color.black : Color.white)

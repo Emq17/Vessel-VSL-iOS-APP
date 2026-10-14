@@ -11,7 +11,10 @@ extension ContentView {
             to: calendar.startOfDay(for: end)).day ?? 0
         let choice = section == .nutrition ? nutritionPeriod : section == .weight ? weightPeriod : sleepPeriod
         if choice == .today { return 1 }
-        return max(1, difference + (choice == .custom ? 0 : 1))
+        if choice == .week { return 7 }
+        if choice == .month { return 30 }
+        if choice == .quarter { return 90 }
+        return max(1, difference)
     }
 
     var dayCount: Int { days(in: healthSection) }

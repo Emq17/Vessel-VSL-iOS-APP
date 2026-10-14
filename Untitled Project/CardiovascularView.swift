@@ -76,45 +76,86 @@ final class VSLCardiovascularStore: ObservableObject {
         let diastolic: Double
     }
 
+    // HealthKit stores the two BP quantities separately. Prefer matching
+    // source/sync identifiers, then exact timestamps, then a conservative
+    // same-day proximity fallback. Never reuse a diastolic sample.
     var pressureReadings: [PressureReading] {
         let unit = HKUnit.millimeterOfMercury()
-        let tops = samples[.bloodPressureSystolic] ?? []
-        let bottoms = samples[.bloodPressureDiastolic] ?? []
+        let tops = (samples[.bloodPressureSystolic] ?? []).sorted { $0.endDate < $1.endDate }
+        let bottoms = (samples[.bloodPressureDiastolic] ?? []).sorted { $0.endDate < $1.endDate }
         var used = Set<UUID>()
-        return tops.compactMap { top in
-            guard let bottom = bottoms
-                .filter({ !used.contains($0.uuid) })
-                .min(by: { abs($0.endDate.timeIntervalSince(top.endDate)) <
-                           abs($1.endDate.timeIntervalSince(top.endDate)) }),
-                abs(bottom.endDate.timeIntervalSince(top.endDate)) <= 60 else { return nil }
+        var result: [PressureReading] = []
+        let calendar = Calendar.current
+        for top in tops {
+            let available = bottoms.filter { !used.contains($0.uuid) }
+            let syncID = top.metadata?[HKMetadataKeySyncIdentifier] as? String
+            let exactSync = available.first { bottom in
+                guard let syncID, !syncID.isEmpty else { return false }
+                return (bottom.metadata?[HKMetadataKeySyncIdentifier] as? String) == syncID
+            }
+            let exactTime = available.min(by: {
+                abs($0.endDate.timeIntervalSince(top.endDate)) < abs($1.endDate.timeIntervalSince(top.endDate))
+            }).flatMap { bottom -> HKQuantitySample? in
+                abs(bottom.endDate.timeIntervalSince(top.endDate)) <= 60 ? bottom : nil
+            }
+            // Some imported devices assign different timestamps to the two
+            // components. Pair only within the same day and same source,
+            // and only when the nearest candidate is unambiguous.
+            let sameSource = available.filter {
+                calendar.isDate($0.endDate, inSameDayAs: top.endDate) &&
+                $0.sourceRevision.source.bundleIdentifier == top.sourceRevision.source.bundleIdentifier
+            }.sorted {
+                abs($0.endDate.timeIntervalSince(top.endDate)) < abs($1.endDate.timeIntervalSince(top.endDate))
+            }
+            let fallback: HKQuantitySample? = {
+                guard let first = sameSource.first else { return nil }
+                let delta = abs(first.endDate.timeIntervalSince(top.endDate))
+                guard delta <= 15 * 60 else { return nil }
+                if sameSource.count > 1 {
+                    let nextDelta = abs(sameSource[1].endDate.timeIntervalSince(top.endDate))
+                    guard nextDelta - delta > 60 else { return nil }
+                }
+                return first
+            }()
+            guard let bottom = exactSync ?? exactTime ?? fallback else { continue }
             used.insert(bottom.uuid)
-            return PressureReading(id: top.uuid, date: top.endDate,
-                                   systolic: top.quantity.doubleValue(for: unit),
-                                   diastolic: bottom.quantity.doubleValue(for: unit))
-        }.sorted { $0.date < $1.date }
+            result.append(PressureReading(id: top.uuid, date: top.endDate,
+                                          systolic: top.quantity.doubleValue(for: unit),
+                                          diastolic: bottom.quantity.doubleValue(for: unit)))
+        }
+        return result
     }
 
     func pressure(on day: Date? = nil) -> (systolic: Double, diastolic: Double, date: Date)? {
-        let unit = HKUnit.millimeterOfMercury()
-        let systolic = samples[.bloodPressureSystolic] ?? []
-        let diastolic = samples[.bloodPressureDiastolic] ?? []
-        // Match readings from the same recording, without requiring correlation authorization.
-        for top in systolic {
-            if let day, !Calendar.current.isDate(top.endDate, inSameDayAs: day) { continue }
-            if let bottom = diastolic.first(where: {
-                abs($0.endDate.timeIntervalSince(top.endDate)) <= 60
-            }) {
-                return (top.quantity.doubleValue(for: unit),
-                        bottom.quantity.doubleValue(for: unit), top.endDate)
-            }
-        }
-        return nil
+        let readings = pressureReadings.reversed()
+        guard let reading = readings.first(where: {
+            guard let day else { return true }
+            return Calendar.current.isDate($0.date, inSameDayAs: day)
+        }) else { return nil }
+        return (reading.systolic, reading.diastolic, reading.date)
     }
 
     func hasReading(on date: Date, bloodPressure: Bool) -> Bool {
-        if bloodPressure { return pressure(on: date) != nil }
+        let calendar = Calendar.current
+        if bloodPressure {
+            // Use the chart's actual readings as well as individual HealthKit
+            // quantity samples. A missing paired value must not hide a day.
+            if pressureReadings.contains(where: { calendar.isDate($0.date, inSameDayAs: date) }) {
+                return true
+            }
+            return [HKQuantityTypeIdentifier.bloodPressureSystolic,
+                    HKQuantityTypeIdentifier.bloodPressureDiastolic].contains { id in
+                (samples[id] ?? []).contains { sample in
+                    calendar.isDate(sample.startDate, inSameDayAs: date) ||
+                    calendar.isDate(sample.endDate, inSameDayAs: date)
+                }
+            }
+        }
         return Self.heartTypes.contains { id in
-            (samples[id] ?? []).contains { Calendar.current.isDate($0.endDate, inSameDayAs: date) }
+            (samples[id] ?? []).contains { sample in
+                calendar.isDate(sample.startDate, inSameDayAs: date) ||
+                calendar.isDate(sample.endDate, inSameDayAs: date)
+            }
         }
     }
 
@@ -158,9 +199,8 @@ extension ContentView {
             return Array(all.suffix(30))
         case .week, .month, .quarter:
             let days = bloodPressurePeriod == .week ? 7 : bloodPressurePeriod == .month ? 30 : 90
-            let start = calendar.date(byAdding: .day, value: -(days - 1),
-                                      to: calendar.startOfDay(for: .now)) ?? .distantPast
-            return all.filter { $0.date >= start && $0.date <= .now }
+            let (start, end) = rollingWindow(days: days)
+            return all.filter { $0.date >= start && $0.date <= end }
         case .custom:
             let start = calendar.startOfDay(for: bloodPressureCustomStart)
             let end = calendar.date(byAdding: .day, value: 1,
@@ -216,6 +256,10 @@ extension ContentView {
                                   date: inspected?.date ?? (showingAverage ? nil : latest.date))
                 if showingAverage && inspected == nil {
                     Text("\(readings.count) readings averaged")
+                        .font(.caption2).foregroundStyle(VSL.muted)
+                }
+                if cardiovascular.pressureReadings.count < (cardiovascular.samples[.bloodPressureSystolic] ?? []).count {
+                    Text("Some systolic samples could not be matched to a diastolic sample.")
                         .font(.caption2).foregroundStyle(VSL.muted)
                 }
             } else {
@@ -347,8 +391,7 @@ extension ContentView {
             end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: heartCustomEnd)) ?? .now
         } else {
             let days = heartPeriod == .week ? 7 : heartPeriod == .month ? 30 : 90
-            start = cal.date(byAdding: .day, value: 1 - days, to: cal.startOfDay(for: .now)) ?? .distantPast
-            end = .now
+            (start, end) = rollingWindow(days: days)
         }
         return all.first { $0.endDate >= start && $0.endDate < end }
     }
@@ -382,8 +425,7 @@ extension ContentView {
             end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: heartCustomEnd)) ?? .now
         } else {
             let days = heartPeriod == .week ? 7 : heartPeriod == .month ? 30 : 90
-            start = cal.date(byAdding: .day, value: 1 - days, to: cal.startOfDay(for: .now)) ?? .distantPast
-            end = .now
+            (start, end) = rollingWindow(days: days)
         }
         return all.filter { $0.endDate >= start && $0.endDate < end }
     }

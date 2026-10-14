@@ -15,8 +15,12 @@ extension ContentView {
         return VStack(spacing: 12) {
             HStack(spacing: 6) {
                 ForEach(VSLPeriod.allCases, id: \.self) { item in
-                    Button { period.wrappedValue = item } label: {
-                        Text(item == .today ? (section == .weight ? "LATEST" : section == nil ? "LAST NIGHT" : item.rawValue) : item.rawValue)
+                    Button {
+                        if section == nil { selectedSleepWakeDate = nil }
+                        else { selectedHealthDay = nil }
+                        period.wrappedValue = item
+                    } label: {
+                        Text(section == nil && item == .today ? "LATEST" : item.rawValue)
                             .font(.system(size: 11, weight: .black))
                             .foregroundStyle(period.wrappedValue == item ? VSL.background : .white)
                             .frame(maxWidth: .infinity)

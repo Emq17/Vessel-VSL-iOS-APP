@@ -104,6 +104,14 @@ struct ContentView: View {
         health.workouts.first { $0.uuid == selectedWorkoutID }
     }
 
+    // A rolling window of N calendar dates, including today; never a calendar month.
+    func rollingWindow(days: Int, now: Date = .now) -> (Date, Date) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: now)
+        let first = calendar.date(byAdding: .day, value: 1 - max(1, days), to: today) ?? today
+        return (first, now)
+    }
+
     func range(for section: VSLHealthSection? = nil) -> (Date, Date) {
         let choice: VSLPeriod
         let from: Date
@@ -117,19 +125,17 @@ struct ContentView: View {
         }
         let calendar = Calendar.current
         if choice == .custom {
-            let start = calendar.startOfDay(for: from)
-            let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: through)) ?? through
-            return (start, end)
+            let start = calendar.startOfDay(for: min(from, through))
+            let last = calendar.startOfDay(for: max(from, through))
+            let end = calendar.date(byAdding: .day, value: 1, to: last) ?? .now
+            return (start, min(end, .now))
         }
         if choice == .today {
             let today = calendar.startOfDay(for: .now)
-            // A night's sleep often begins yesterday and ends this morning.
-            let start = section == nil ? today.addingTimeInterval(-12 * 3600) : today
-            return (start, .now)
+            return (section == nil ? today.addingTimeInterval(-12 * 3600) : today, .now)
         }
-        let days = choice == .week ? 7 : choice == .month ? 30 : 90
-        let start = calendar.date(byAdding: .day, value: 1 - days, to: calendar.startOfDay(for: .now)) ?? .now
-        return (start, .now)
+        let count = choice == .week ? 7 : choice == .month ? 30 : 90
+        return rollingWindow(days: count)
     }
 
     var dateRange: (Date, Date) {
