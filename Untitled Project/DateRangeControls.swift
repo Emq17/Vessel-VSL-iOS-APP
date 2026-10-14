@@ -16,7 +16,7 @@ extension ContentView {
             HStack(spacing: 6) {
                 ForEach(VSLPeriod.allCases, id: \.self) { item in
                     Button { period.wrappedValue = item } label: {
-                        Text(section == nil && item == .today ? "LAST NIGHT" : item.rawValue)
+                        Text(item == .today ? (section == .weight ? "LATEST" : section == nil ? "LAST NIGHT" : item.rawValue) : item.rawValue)
                             .font(.system(size: 11, weight: .black))
                             .foregroundStyle(period.wrappedValue == item ? VSL.background : .white)
                             .frame(maxWidth: .infinity)

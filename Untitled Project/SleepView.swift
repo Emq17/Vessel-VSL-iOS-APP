@@ -9,42 +9,144 @@ extension ContentView {
         VStack(alignment: .leading, spacing: 15) {
 
 
-            if let recent = sleepSamples.filter({ [
+            if selectedSleepWakeDate == nil, let recent = sleepSamples.filter({ [
                 HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue,
                 HKCategoryValueSleepAnalysis.asleepCore.rawValue,
                 HKCategoryValueSleepAnalysis.asleepDeep.rawValue,
                 HKCategoryValueSleepAnalysis.asleepREM.rawValue
             ].contains($0.value) }).max(by: { $0.endDate < $1.endDate }) {
-                Text("LATEST SLEEP RECORD · " + recent.endDate.formatted(date: .abbreviated, time: .omitted))
+                Text("SLEEP RECORD · " + (selectedSleepWakeDate ?? recent.endDate).formatted(date: .abbreviated, time: .omitted))
                     .font(.system(size: 11, weight: .heavy))
                     .foregroundStyle(VSL.lime)
             }
 
             periodControls(for: nil)
+            sleepCalendar
 
             if sleepPeriod == .today {
                 let latest = latestSleepSummary
                 sleepStagesChart
-                VSLMetricGrid(metrics: [
-                    VSLMetric(id: "Last night sleep", value: VSLFormat.time(latest.total), unit: ""),
-                    VSLMetric(id: "REM", value: VSLFormat.time(latest.rem), unit: ""),
-                    VSLMetric(id: "Deep", value: VSLFormat.time(latest.deep), unit: ""),
-                    VSLMetric(id: "Core", value: VSLFormat.time(latest.core), unit: ""),
-                    VSLMetric(id: "Awake", value: VSLFormat.time(latest.awake), unit: "")
-                ])
+                if selectedSleepWakeDate != nil && latestSleepEpisodeSamples.isEmpty {
+                    Text("No sleep data for this date.").font(.caption).foregroundStyle(VSL.muted)
+                } else {
+                VStack(spacing: 8) {
+                    sleepMetricRow("Awake", value: VSLFormat.time(latest.awake), color: Color(red: 0.98, green: 0.58, blue: 0.36))
+                    sleepMetricRow("REM", value: VSLFormat.time(latest.rem), color: Color(red: 0.45, green: 0.70, blue: 1))
+                    sleepMetricRow("Core", value: VSLFormat.time(latest.core), color: Color(red: 0.20, green: 0.44, blue: 0.88))
+                    sleepMetricRow("Deep", value: VSLFormat.time(latest.deep), color: Color(red: 0.48, green: 0.34, blue: 0.77))
+                    Rectangle()
+                        .fill(VSL.lime.opacity(0.55))
+                        .frame(height: 1)
+                        .padding(.horizontal, 10)
+                    sleepMetricRow("Total Sleep", value: VSLFormat.time(latest.total), color: VSL.lime)
+                }
+                }
             } else {
                 let summary = sleepSummary
-                VSLMetricGrid(metrics: [
-                    VSLMetric(id: "Avg nightly sleep", value: VSLFormat.time(summary.average), unit: ""),
-                    VSLMetric(id: "Recorded nights", value: "\(summary.nights)", unit: ""),
-                    VSLMetric(id: "Total sleep", value: VSLFormat.time(summary.total), unit: ""),
-                    VSLMetric(id: "Avg REM / night", value: VSLFormat.time(summary.rem), unit: ""),
-                    VSLMetric(id: "Avg deep / night", value: VSLFormat.time(summary.deep), unit: ""),
-                    VSLMetric(id: "Avg core / night", value: VSLFormat.time(summary.core), unit: "")
-                ])
+                VStack(spacing: 8) {
+                    sleepMetricRow("Avg Nightly Sleep", value: VSLFormat.time(summary.average), color: VSL.lime)
+                    sleepMetricRow("Recorded Nights", value: "\(summary.nights)", color: VSL.muted)
+                    sleepMetricRow("Avg REM / Night", value: VSLFormat.time(summary.rem), color: Color(red: 0.45, green: 0.70, blue: 1))
+                    sleepMetricRow("Avg Core / Night", value: VSLFormat.time(summary.core), color: Color(red: 0.20, green: 0.44, blue: 0.88))
+                    sleepMetricRow("Avg Deep / Night", value: VSLFormat.time(summary.deep), color: Color(red: 0.48, green: 0.34, blue: 0.77))
+                    // This is the sum across recorded nights, not a sum of the per-night averages.
+                    sleepMetricRow("Total Sleep (Range)", value: VSLFormat.time(summary.total), color: VSL.lime)
+                }
             }
 
         }
+    }
+
+    private var sleepCalendar: some View {
+        let calendar = Calendar.current
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: sleepCalendarMonth)) ?? .now
+        let numberOfDays = calendar.range(of: .day, in: .month, for: monthStart)?.count ?? 30
+        let offset = (calendar.component(.weekday, from: monthStart) - calendar.firstWeekday + 7) % 7
+        let days: [Int?] = Array(repeating: nil, count: offset) + (1...numberOfDays).map { Optional($0) }
+        return VStack(spacing: 12) {
+            HStack {
+                Button { sleepCalendarMonth = calendar.date(byAdding: .month, value: -1, to: monthStart) ?? monthStart } label: {
+                    Image(systemName: "chevron.left").foregroundStyle(VSL.lime)
+                }
+                Spacer()
+                Text(monthStart.formatted(.dateTime.month(.wide).year()))
+                    .font(.system(size: 14, weight: .semibold))
+                Spacer()
+                Button { sleepCalendarMonth = calendar.date(byAdding: .month, value: 1, to: monthStart) ?? monthStart } label: {
+                    Image(systemName: "chevron.right").foregroundStyle(VSL.lime)
+                }
+                .disabled(monthStart >= calendar.date(from: calendar.dateComponents([.year, .month], from: .now))!)
+            }
+            let symbols = calendar.veryShortStandaloneWeekdaySymbols
+            HStack(spacing: 0) {
+                ForEach(0..<7, id: \.self) { i in
+                    Text(symbols[(calendar.firstWeekday - 1 + i) % 7])
+                        .font(.caption2).foregroundStyle(VSL.muted)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 6) {
+                ForEach(Array(days.enumerated()), id: \.offset) { _, day in
+                    if let day,
+                       let date = calendar.date(byAdding: .day, value: day - 1, to: monthStart) {
+                        let selected = calendar.isDate(date, inSameDayAs: selectedSleepWakeDate ?? latestSleepEpisodeWakeDate ?? .now)
+                        Button {
+                            selectedSleepWakeDate = date
+                            sleepPeriod = .today
+                        } label: {
+                            Text("\(day)")
+                                .font(.system(size: 13, weight: selected ? .bold : .regular))
+                                .frame(maxWidth: .infinity, minHeight: 34)
+                                .foregroundStyle(selected ? Color.black : Color.white)
+                                .background(selected ? VSL.lime : Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
+                        }
+                        .disabled(date > .now)
+                    } else {
+                        Color.clear.frame(height: 34)
+                    }
+                }
+            }
+            if selectedSleepWakeDate != nil {
+                Button("Back to Last Night") {
+                    selectedSleepWakeDate = nil
+                    sleepCalendarMonth = .now
+                    sleepPeriod = .today
+                }
+                .font(.caption).foregroundStyle(VSL.lime)
+            }
+        }
+        .padding(14)
+        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var latestSleepEpisodeWakeDate: Date? {
+        // Used for highlighting the default calendar day.
+        sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
+            $0.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue ||
+            $0.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue ||
+            $0.value == HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue }
+            .map(\.endDate).max()
+    }
+
+    private func sleepMetricRow(_ label: String, value: String, color: Color) -> some View {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(color)
+                .frame(width: 4, height: 30)
+            Text(label)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(VSL.muted)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.system(size: 21, weight: .semibold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .padding(.horizontal, 15)
+        .padding(.vertical, 12)
+        .background(Color.white.opacity(0.055), in: RoundedRectangle(cornerRadius: 12))
     }
 
     // Build actual sleep episodes from the recorded intervals rather than
@@ -100,9 +202,18 @@ extension ContentView {
             return total + end.timeIntervalSince(start)
         }
 
-        let selected = episodes.reversed().first(where: {
+        let matchingEpisodes: [[HKCategorySample]]
+        if let wakeDay = selectedSleepWakeDate {
+            matchingEpisodes = episodes.filter { episode in
+                guard let wake = episode.map(\.endDate).max() else { return false }
+                return Calendar.current.isDate(wake, inSameDayAs: wakeDay)
+            }
+        } else {
+            matchingEpisodes = episodes
+        }
+        guard let selected = matchingEpisodes.reversed().first(where: {
             coveredDuration($0) >= 3 * 3600
-        }) ?? episodes[episodes.count - 1]
+        }) ?? matchingEpisodes.last else { return [] }
 
         // Health may contain overlapping Watch and third-party records.
         // Choose one source for the episode rather than summing sources.

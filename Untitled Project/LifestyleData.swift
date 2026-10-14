@@ -58,13 +58,11 @@ extension ContentView {
             // Query full recent nights, not just samples after midnight.
             // For LAST NIGHT, the latest complete available overnight
             // record may have ended yesterday if the Watch was not worn.
-            let sleepStart: Date = sleepPeriod == .today
-                ? (Calendar.current.date(byAdding: .day, value: -7, to: .now) ?? start)
-                : start
+            let sleepStart: Date = Calendar.current.date(byAdding: .year, value: -1, to: .now) ?? start
 
             health.querySleep(
                 start: sleepStart,
-                end: end
+                end: .now
             ) { samples in
                 sleepSamples = samples
             }

@@ -37,6 +37,10 @@ extension ContentView {
                     notice(analysisError)
                 }
 
+                // Put interval controls before the results so runners and swimmers
+                // can select cadence, pace, and distance ranges without scrolling.
+                intervalControls
+
                 if let analysis {
                     resultSections(analysis)
                     if let activity = selectedWorkout?.workoutActivityType,
@@ -45,7 +49,6 @@ extension ContentView {
                     }
                 }
 
-                intervalControls
             }
         }
     }

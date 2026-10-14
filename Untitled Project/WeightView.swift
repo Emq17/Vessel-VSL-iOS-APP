@@ -7,7 +7,7 @@ extension ContentView {
     var weightContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             VSLSection(title: "WEIGHT", number: "01", color: VSL.lime)
-            if let latest = weightPoints.last {
+            if let latest = latestWeighIn {
                 Text("LATEST WEIGH-IN · " + latest.0.formatted(date: .abbreviated, time: .shortened))
                     .font(.system(size: 11, weight: .heavy)).foregroundStyle(VSL.lime)
             }
@@ -15,20 +15,23 @@ extension ContentView {
             periodControls(for: .weight)
 
             let points = weightPoints
-            if let first = points.first, let last = points.last {
+            if let latest = latestWeighIn {
                 VSLMetricGrid(metrics: [
-                    VSLMetric(id: "Latest weight", value: VSLFormat.number(last.1, decimals: 1), unit: "lb"),
-                    VSLMetric(id: "Change", value: String(format: "%+.1f", last.1 - first.1), unit: "lb"),
-                    VSLMetric(id: weightPeriod == .today ? "Latest recorded" : "Average recorded", value: VSLFormat.number(weightPeriod == .today ? last.1 : points.map { $0.1 }.reduce(0, +) / Double(points.count), decimals: 1), unit: "lb"),
-                    VSLMetric(id: "Measurements", value: "\(points.count)", unit: "")
+                    VSLMetric(id: "Latest weight", value: VSLFormat.number(latest.1, decimals: 1), unit: "lb"),
+                    VSLMetric(id: "Measurements in range", value: "\(points.count)", unit: "")
                 ])
-                VSLSection(title: "WEIGHT TREND", number: "02", color: VSL.lime)
-                weightChart(points)
-                Text("First: \(first.0.formatted(date: .abbreviated, time: .omitted))  ·  Latest: \(last.0.formatted(date: .abbreviated, time: .omitted))")
-                    .font(.caption)
-                    .foregroundStyle(VSL.muted)
+                if let first = points.first, let last = points.last, points.count > 1 {
+                    VSLMetricGrid(metrics: [
+                        VSLMetric(id: "Change in range", value: String(format: "%+.1f", last.1 - first.1), unit: "lb"),
+                        VSLMetric(id: "Average in range", value: VSLFormat.number(points.map { $0.1 }.reduce(0, +) / Double(points.count), decimals: 1), unit: "lb")
+                    ])
+                }
+                if !points.isEmpty {
+                    VSLSection(title: "WEIGHT TREND", number: "02", color: VSL.lime)
+                    weightChart(points)
+                }
             } else {
-                notice("No weight measurements in this period. If your scale app writes weight to Apple Health, allow VSL to read Body Mass and try again.")
+                notice("No weigh-ins found in Apple Health. Check Body Mass read permission and that your scale or logging app saves measurements to Apple Health.")
             }
 
             VSLSection(title: "NUTRITION CONTEXT", number: "03", color: VSL.lime)
@@ -42,9 +45,17 @@ extension ContentView {
         }
     }
 
+    var latestWeighIn: (Date, Double)? {
+        guard let sample = weightSamples.max(by: { $0.startDate < $1.startDate }) else { return nil }
+        return (sample.startDate, sample.quantity.doubleValue(for: .pound()))
+    }
+
     var weightPoints: [(Date, Double)] {
+        // Historical query provides latest value; the selected filter applies to the trend.
+        let (start, end) = range(for: .weight)
+        let inRange = weightSamples.filter { $0.startDate >= start && $0.startDate <= end }
         // One measurement per calendar day: use the last recorded measurement.
-        let grouped = Dictionary(grouping: weightSamples) {
+        let grouped = Dictionary(grouping: inRange) {
             Calendar.current.startOfDay(for: $0.startDate)
         }
         return grouped.compactMap { _, samples -> (Date, Double)? in

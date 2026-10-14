@@ -34,17 +34,22 @@ The app is organized around five areas: **Focus → Performance → Health → S
 - Swimming: swim-specific metrics and distance/interval tools
 - Time-based workouts, such as jump rope: avoid irrelevant distance and pace fields
 - Custom analysis options based on the selected workout type
+- Analysis range and interval controls positioned above workout results for quick access
 
 ### Health — Daily metrics and longer-term trends
-- Weight tracking and trend views
+- Latest available Apple Health weigh-in, even when it was recorded before today
+- Weight trend views with separate date-range filters (Latest, 7D, 30D, and other supported ranges)
 - Nutrition data available through Apple Health
 - Medication information and tracking views
 - Today and historical summary periods
 
-### Sleep — Understand the latest recorded night
+### Sleep — Explore nightly sleep history
 - Last-night summary and historical sleep averages
+- Monthly sleep calendar for selecting a wake-up date and reviewing the preceding night (draft integration; requires merging and on-device verification)
 - Awake, REM, Core, and Deep sleep breakdowns when provided by Apple Health
-- Visual sleep-stage timeline with touch-and-drag selection, interval timestamps, and haptic feedback
+- Interactive sleep-stage timeline placed directly beneath the date-range controls, with touch-and-drag selection, interval timestamps, and haptic feedback
+- Full-width sleep metric rows with stage-matched color indicators; REM, Core, and Deep precede the Total Sleep summary
+- Awake time shown separately because it does not contribute to Total Sleep
 
 > Health and sleep metrics depend on what Apple Health and connected devices/apps actually record. Some calculations, particularly reconstruction of overnight sleep sessions, are still being validated against Apple Health.
 
@@ -105,11 +110,21 @@ The app is organized around five areas: **Focus → Performance → Health → S
 
 VSL requests access to Apple Health data through iOS permission flows. Journal entries and attachments are stored locally on the device, without a separate VSL cloud account. Local storage is not the same as end-to-end encryption or an app-specific lock. Do not commit personal health exports, private journal entries, unredacted screenshots, secrets, or provisioning credentials to this repository.
 
+## Recent Improvements
+
+- Moved workout analysis range controls above results on distance-based activities.
+- Updated weight retrieval to show the most recent recorded weigh-in rather than requiring a measurement today; renamed the weight selector to **Latest**.
+- Moved the interactive sleep-stage timeline above the metric rows, retaining stage selection and haptic feedback.
+- Replaced the sleep metric grid with full-width, color-coded rows and moved Total Sleep beneath the sleep stages.
+- Prepared a date-selectable monthly sleep calendar so a selected day corresponds to the sleep session ending that morning; integration into the latest project files is pending.
+
 ## Project Status
 
-**Actively developed.** Core app screens and analysis workflows are implemented, with a newly added Journal feature and ongoing refinement of sleep-session calculations, UI polish, activity-specific analytics, and device testing. This repository is a portfolio project, not a medical product or clinically validated health tool.
+**Actively developed.** Core app screens and analysis workflows are implemented, with a newly added Journal feature and ongoing refinement of sleep-session calculations, streamlined sleep metric presentation, accessible workout interval controls, latest-weigh-in handling, and device testing. The sleep calendar is currently a draft update and has not been merged into the latest project snapshot or verified in Xcode. This repository is a portfolio project, not a medical product or clinically validated health tool.
 
 ## Roadmap
+
+- [ ] Merge the monthly sleep calendar into the latest app source and verify date-to-night matching on device
 
 - [ ] Validate sleep totals and stage boundaries against Apple Health across different nights
 - [ ] Test Journal entry persistence, attachments, and deletion on a physical iPhone
@@ -119,10 +134,4 @@ VSL requests access to Apple Health data through iOS permission flows. Journal e
 - [ ] Refine accessibility, dynamic type, and device-size layouts
 - [ ] Clean up the Xcode project and target naming
 
----
-
-<div align="center">
-
 **Built with Swift, SwiftUI, HealthKit, and Xcode.**
-
-</div>
