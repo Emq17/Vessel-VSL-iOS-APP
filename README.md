@@ -1,18 +1,8 @@
-<div align="center">
-
 # VSL — Vessel
-### Workout analytics, health insights, focus, and personal journaling.
 
-**A native iOS application built in Xcode with Swift, SwiftUI, and HealthKit.**
+**iOS fitness, health, and productivity app**
 
-[![Platform](https://img.shields.io/badge/Platform-iOS-111111?style=flat-square)](#getting-started)
-[![Language](https://img.shields.io/badge/Language-Swift-F05138?style=flat-square)](#tech-stack)
-[![Framework](https://img.shields.io/badge/UI-SwiftUI-111111?style=flat-square)](#tech-stack)
-[![Status](https://img.shields.io/badge/Status-Active%20Development-9CCB38?style=flat-square)](#project-status)
-
-</div>
-
----
+Built with Swift, SwiftUI, HealthKit, and Xcode. Includes activity-specific workout analytics, sleep insights, daily planning, and personal journaling.
 
 ## Overview
 
