@@ -2,7 +2,11 @@
 
 **YOUR BODY. YOUR VESSEL.**
 
-A native iOS app that brings training, health, sleep, focus, and journaling into one minimal workspace. Built with **SwiftUI** and **Apple HealthKit**, VSL turns personal data into actionable views without the clutter.
+From your wrist to a clearer picture of your progress.
+
+VSL is a native iOS app built with SwiftUI and Apple HealthKit, transforming health and fitness data collected through Apple Watch and Apple Health into meaningful insights. From workout performance and cardiovascular trends to sleep analysis, nutrition, focus, and journaling, VSL brings everything together in one minimal, personalized workspace.
+
+Designed to make tracking your health, staying organized, and reflecting on your daily life easier, all in one place.
 
 ## App preview
 
