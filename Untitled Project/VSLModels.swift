@@ -8,12 +8,14 @@ enum VSLTab: String, CaseIterable {
     case performance = "PERFORMANCE"
     case health = "HEALTH"
     case sleep = "SLEEP"
+    case journal = "JOURNAL"
 
     var icon: String {
         switch self {
         case .performance: return "figure.run"
         case .health: return "heart.fill"
         case .sleep: return "moon.fill"
+        case .journal: return "book.closed.fill"
         case .focus: return "chart.bar.xaxis"
         }
     }
