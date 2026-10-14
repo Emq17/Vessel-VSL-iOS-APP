@@ -1,36 +1,58 @@
 # VSL — Vessel
 
 **BUILT FOR PROGRESS.**  
-*YOUR BODY. YOUR VESSEL.*
+**YOUR BODY. YOUR VESSEL.**
 
-**Native iOS health, fitness, and productivity app**
+A native iOS app that brings training, health, sleep, focus, and journaling into one minimal workspace. Built with **SwiftUI** and **Apple HealthKit**, VSL turns personal data into actionable views without the clutter.
 
-Built with **Swift, SwiftUI, and HealthKit**, VSL brings workout interval analysis, sleep-stage exploration, health tracking, focused planning, and journaling into one minimalist interface.
+## App preview
+
+<p align="center">
+  <img src="screenshots/focus.png" width="185" alt="Focus timer and daily tasks" />
+  <img src="screenshots/performance.png" width="185" alt="Performance workout analysis" />
+  <img src="screenshots/health.png" width="185" alt="Health analytics and blood pressure" />
+  <img src="screenshots/sleep.png" width="185" alt="Sleep stage timeline" />
+  <img src="screenshots/journal.png" width="185" alt="Journal and mood tracking" />
+</p>
+
+<!-- Optional: add a Nutrition screenshot once screenshots/nutrition.png exists.
+<p align="center"><img src="screenshots/nutrition.png" width="210" alt="Nutrition macro breakdown" /></p>
+-->
 
 ## Features
 
-- **Performance:** Browse HealthKit workouts and inspect custom time or distance intervals, including sport-specific pace and cadence analysis.
-- **Sleep:** Explore sleep stages with a draggable timeline, snapping and haptic feedback; browse previous nights on a calendar and review stage totals.
-- **Health:** View your most recent weigh-in regardless of the selected trend period, alongside nutrition and medication tracking. Blood pressure and cardiovascular HealthKit integrations are currently being implemented and tested.
-- **Focus:** Pomodoro timer, daily tasks, and a persistent monthly calendar.
-- **Journal:** Date-based entries, moods, and local photo/file attachments.
+- **Focus** — Pomodoro sessions, date-based task management, and an expandable calendar.
+- **Performance** — Apple Health workout history with custom distance/time interval analysis and activity-specific metrics.
+- **Health** — Latest weight and historical trends; nutrition totals, daily averages, and macro distribution; medication tracking; blood pressure and heart rate insights.
+- **Sleep** — Apple Health sleep-stage breakdown, interactive timeline inspection, and historical calendar views.
+- **Journal** — Dated entries, mood tracking, and attachments.
 
-## Engineering highlights
+## Health analytics
 
-- HealthKit authorization and historical sample retrieval, including overnight sleep windows and infrequent body-mass records.
-- Workout interval analysis and activity-specific metrics.
-- SwiftUI-driven date selection, interactive visualizations, and local journal persistence.
-- Shared components and a dark, minimal design system.
+- **Rolling date ranges:** 7D, 30D, and 90D mean consecutive calendar days ending today—not calendar months. Custom ranges are supported where available.
+- **Blood pressure:** Systolic/diastolic trend chart, interactive point inspection with measurement timestamps, range averages, and calendar activity indicators.
+- **Heart rate:** Latest measurements and range averages for heart rate, resting heart rate, HRV, VO₂ max, and cardio recovery.
+- **Nutrition:** Daily-average calories and macronutrients across selected periods, with a macro-energy donut chart.
+- **Weight:** Most recent recorded weigh-in remains visible independently of the selected historical trend range.
 
-## Tech stack
+## Engineering
 
-**Swift · SwiftUI · HealthKit · Xcode · Git/GitHub**
+**Swift · SwiftUI · HealthKit · Swift Charts · Xcode · Git/GitHub**
+
+- Native, reusable SwiftUI components with a consistent dark UI and lime accent.
+- HealthKit permissions and sample retrieval for workouts, cardiovascular metrics, nutrition, weight, and sleep.
+- Date-driven filtering, calendar indicators, and interactive data visualizations.
+- Local persistence for productivity and journal workflows.
 
 ## Run locally
 
-1. Clone the repository and open the `.xcodeproj` in Xcode.
-2. Select an iOS device and configure your own signing team.
-3. Enable required HealthKit entitlements and approve requested Health permissions.
-4. Build and run. Some features require existing Apple Health records.
+1. Clone this repository and open the Xcode project.
+2. Configure your Apple development signing team and required HealthKit capabilities.
+3. Run on a compatible iOS device and grant the requested Apple Health permissions.
+4. Some dashboards require existing Apple Health data to populate.
 
-**Status:** Actively developed iOS prototype. Blood pressure and cardiovascular HealthKit features are being integrated and have not yet been fully validated on-device.
+## Status
+
+**In active development.** VSL is a personal iOS project; features and HealthKit integrations are being refined and tested.
+
+> **Privacy:** Screenshots are for demonstration. Health and journal information shown in public screenshots should be demo data or redacted.
