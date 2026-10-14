@@ -16,8 +16,8 @@ extension ContentView {
             Text("FUEL THE WORK.")
                 .font(.system(size: 27, weight: .black))
 
-            if let latest = nutrition[.dietaryEnergyConsumed]?.max(by: { $0.startDate < $1.startDate }) {
-                Text("LATEST CALORIE ENTRY · " + latest.startDate.formatted(date: .abbreviated, time: .shortened))
+            if let latestDate = latestNutritionDate {
+                Text("LATEST NUTRITION ENTRY · " + latestDate.formatted(date: .abbreviated, time: .shortened))
                     .font(.system(size: 11, weight: .heavy)).foregroundStyle(VSL.lime)
             }
 
@@ -60,23 +60,40 @@ extension ContentView {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
                 .background(VSL.card, in: RoundedRectangle(cornerRadius: 12))
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("MACRO DISTRIBUTION")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(VSL.muted)
+                    Text("No recorded macros for this selection")
+                        .font(.caption)
+                        .foregroundStyle(VSL.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(VSL.card, in: RoundedRectangle(cornerRadius: 12))
             }
 
             let averageDays = max(1, days(in: .nutrition))
             let dailyValues = values.map { value in value.map { $0 / Double(averageDays) } }
-            let isToday = nutritionPeriod == .today
+            let isLatest = nutritionPeriod == .today
             VSLMetricGrid(metrics: [
-                VSLMetric(id: isToday ? "Calories today" : "Avg calories / day",
+                VSLMetric(id: isLatest ? "Latest calories" : "Avg calories / day",
                           value: VSLFormat.number(dailyValues[0]), unit: "kcal"),
-                VSLMetric(id: isToday ? "Carbs today" : "Avg carbs / day",
+                VSLMetric(id: isLatest ? "Latest carbs" : "Avg carbs / day",
                           value: VSLFormat.number(dailyValues[1], decimals: 1), unit: "g"),
-                VSLMetric(id: isToday ? "Protein today" : "Avg protein / day",
+                VSLMetric(id: isLatest ? "Latest protein" : "Avg protein / day",
                           value: VSLFormat.number(dailyValues[2], decimals: 1), unit: "g"),
-                VSLMetric(id: isToday ? "Fat today" : "Avg fat / day",
+                VSLMetric(id: isLatest ? "Latest fat" : "Avg fat / day",
                           value: VSLFormat.number(dailyValues[3], decimals: 1), unit: "g")
             ])
 
-            let sources = Set(nutrition.values.flatMap { $0 }.map { $0.sourceRevision.source.name })
+            let visibleSamples = nutrition.values.flatMap { $0 }.filter { sample in
+                nutritionPeriod != .today || latestNutritionDate.map {
+                    Calendar.current.isDate(sample.endDate, inSameDayAs: $0)
+                } == true
+            }
+            let sources = Set(visibleSamples.map { $0.sourceRevision.source.name })
             if !sources.isEmpty {
                 Text("APPLE HEALTH SOURCES: " + sources.sorted().joined(separator: ", "))
                     .font(.system(size: 10, weight: .bold))
@@ -90,6 +107,10 @@ extension ContentView {
         }
     }
 
+    private var latestNutritionDate: Date? {
+        nutrition.values.flatMap { $0 }.map(\.endDate).max()
+    }
+
     var nutritionSummary: [Double?] {
         let identifiers: [HKQuantityTypeIdentifier] = [
             .dietaryEnergyConsumed,
@@ -99,7 +120,15 @@ extension ContentView {
         ]
 
         return identifiers.map { identifier in
-            let samples = nutrition[identifier] ?? []
+            let allSamples = nutrition[identifier] ?? []
+            let samples: [HKQuantitySample]
+            if nutritionPeriod == .today, let latestDate = latestNutritionDate {
+                samples = allSamples.filter {
+                    Calendar.current.isDate($0.endDate, inSameDayAs: latestDate)
+                }
+            } else {
+                samples = allSamples
+            }
 
             guard !samples.isEmpty else { return nil }
 

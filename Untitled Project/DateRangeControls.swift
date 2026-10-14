@@ -20,7 +20,7 @@ extension ContentView {
                         else { selectedHealthDay = nil }
                         period.wrappedValue = item
                     } label: {
-                        Text(section == nil && item == .today ? "LATEST" : item.rawValue)
+                        Text((section == nil || section == .nutrition) && item == .today ? "LATEST" : item.rawValue)
                             .font(.system(size: 11, weight: .black))
                             .foregroundStyle(period.wrappedValue == item ? VSL.background : .white)
                             .frame(maxWidth: .infinity)

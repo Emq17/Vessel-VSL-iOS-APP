@@ -34,10 +34,14 @@ extension ContentView {
                 .dietaryFatTotal
             ]
 
+            // LATEST searches historical entries, rather than assuming food was logged today.
+            let nutritionStart = nutritionPeriod == .today
+                ? (Calendar.current.date(byAdding: .year, value: -3, to: .now) ?? start)
+                : start
             for identifier in identifiers {
                 health.queryQuantity(
                     identifier,
-                    start: start,
+                    start: nutritionStart,
                     end: end
                 ) { samples in
                     nutrition[identifier] = samples
