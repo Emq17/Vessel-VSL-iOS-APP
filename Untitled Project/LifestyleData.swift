@@ -43,7 +43,10 @@ extension ContentView {
         } else if tab == .health && healthSection == .weight {
             weightSamples = []
             weightNutrition = [:]
-            health.queryQuantity(.bodyMass, start: start, end: end) { samples in
+            let historicalWeightStart = Calendar.current.date(
+                byAdding: .year, value: -15, to: Date()
+            ) ?? start
+            health.queryQuantity(.bodyMass, start: historicalWeightStart, end: Date()) { samples in
                 weightSamples = samples.sorted { $0.startDate < $1.startDate }
             }
             for identifier in [HKQuantityTypeIdentifier.dietaryEnergyConsumed,

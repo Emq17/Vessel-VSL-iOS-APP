@@ -115,6 +115,13 @@ extension ContentView {
                         )
                     }
 
+                    if !byDistance || selectedWorkout.map({ VSLAnalyzer.distanceType($0.workoutActivityType) == nil }) == true {
+                        Text("EXAMPLE  00:00 → 10:00  (MM:SS)")
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundStyle(VSL.muted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
                     Button {
                         focusedField = nil
                         applyCustom()
@@ -145,14 +152,6 @@ extension ContentView {
                 )
             }
 
-            if analysis != nil {
-                Text("SHOWING: \(appliedRange)")
-                    .font(.system(
-                        size: 10,
-                        weight: .bold
-                    ))
-                    .foregroundStyle(VSL.muted)
-            }
         }
     }
 

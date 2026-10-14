@@ -16,10 +16,22 @@ extension ContentView {
 
             let points = weightPoints
             if let latest = latestWeighIn {
-                VSLMetricGrid(metrics: [
-                    VSLMetric(id: "Latest weight", value: VSLFormat.number(latest.1, decimals: 1), unit: "lb"),
-                    VSLMetric(id: "Measurements in range", value: "\(points.count)", unit: "")
-                ])
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("LATEST WEIGHT")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(VSL.muted)
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(VSLFormat.number(latest.1, decimals: 1))
+                            .font(.system(size: 25, weight: .black, design: .rounded))
+                            .monospacedDigit()
+                        Text("lb")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(VSL.muted)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(15)
+                .background(VSL.card, in: RoundedRectangle(cornerRadius: 13))
                 if let first = points.first, let last = points.last, points.count > 1 {
                     VSLMetricGrid(metrics: [
                         VSLMetric(id: "Change in range", value: String(format: "%+.1f", last.1 - first.1), unit: "lb"),

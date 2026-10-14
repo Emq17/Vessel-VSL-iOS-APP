@@ -21,7 +21,21 @@ extension ContentView {
             }
 
             periodControls(for: nil)
-            sleepCalendar
+            VStack(spacing: 0) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { sleepCalendarExpanded.toggle() }
+                } label: {
+                    HStack {
+                        Text("CALENDAR").font(.system(size: 11, weight: .bold))
+                        Spacer()
+                        Image(systemName: sleepCalendarExpanded ? "chevron.up" : "chevron.down")
+                    }
+                    .foregroundStyle(VSL.lime)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+                if sleepCalendarExpanded { sleepCalendar }
+            }
 
             if sleepPeriod == .today {
                 let latest = latestSleepSummary
@@ -90,12 +104,22 @@ extension ContentView {
                     if let day,
                        let date = calendar.date(byAdding: .day, value: day - 1, to: monthStart) {
                         let selected = calendar.isDate(date, inSameDayAs: selectedSleepWakeDate ?? latestSleepEpisodeWakeDate ?? .now)
+                        let hasSleep = sleepSamples.contains { sample in
+                            let wakeDate = sample.endDate
+                            return Calendar.current.isDate(wakeDate, inSameDayAs: date)
+                                && sample.value != HKCategoryValueSleepAnalysis.inBed.rawValue
+                        }
                         Button {
                             selectedSleepWakeDate = date
                             sleepPeriod = .today
                         } label: {
-                            Text("\(day)")
-                                .font(.system(size: 13, weight: selected ? .bold : .regular))
+                            VStack(spacing: 3) {
+                                Text("\(day)")
+                                    .font(.system(size: 13, weight: selected ? .bold : .regular))
+                                Circle()
+                                    .fill(hasSleep ? (selected ? Color.black : VSL.lime) : Color.clear)
+                                    .frame(width: 4, height: 4)
+                            }
                                 .frame(maxWidth: .infinity, minHeight: 34)
                                 .foregroundStyle(selected ? Color.black : Color.white)
                                 .background(selected ? VSL.lime : Color.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 7))
@@ -475,7 +499,8 @@ private struct VSLSleepInteractiveChart: View {
                             .gesture(DragGesture(minimumDistance: 0)
                                 .onChanged { value in
                                     snap(at: value.location.x - 48, width: geometry.size.width - 48)
-                                })
+                                }
+                                .onEnded { _ in selectedID = nil })
                     }
                 }
                 HStack {

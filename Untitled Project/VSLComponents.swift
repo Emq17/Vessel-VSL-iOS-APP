@@ -9,13 +9,18 @@ struct VSLSection: View {
 
     var body: some View {
         HStack {
+            Text(number).opacity(0.7)
             Text(title)
             Spacer()
         }
-        .font(.system(size: 11, weight: .bold))
-        .tracking(0.8)
-        .foregroundStyle(VSL.muted)
-        .padding(.vertical, 5)
+        .font(.system(size: 12, weight: .black))
+        .tracking(0.7)
+        .foregroundStyle(VSL.background)
+        .padding(14)
+        .background(
+            color,
+            in: RoundedRectangle(cornerRadius: 10)
+        )
     }
 }
 
@@ -44,7 +49,7 @@ struct VSLMetricGrid: View {
                             .font(.system(
                                 size: 25,
                                 weight: .black,
-                                design: .default
+                                design: .rounded
                             ))
                             .monospacedDigit()
                             .minimumScaleFactor(0.5)

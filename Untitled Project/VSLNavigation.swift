@@ -5,7 +5,7 @@ extension ContentView {
     // MARK: - Header & Bottom Navigation
 
     var brandHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .center, spacing: 16) {
             Text("VSL")
                 .font(.system(
                     size: 39,
@@ -15,12 +15,20 @@ extension ContentView {
                 .italic()
                 .tracking(-2)
 
-            Spacer()
+            Spacer(minLength: 8)
 
-            Text("EVERY EFFORT. EVERY DETAIL.")
-                .font(.system(size: 9, weight: .heavy))
-                .tracking(0.7)
-                .foregroundStyle(VSL.lime)
+            VStack(alignment: .center, spacing: 3) {
+                Text("BUILT FOR PROGRESS.")
+                    .font(.system(size: 9, weight: .heavy))
+                    .tracking(0.5)
+                    .foregroundStyle(VSL.lime)
+                Text("YOUR BODY. YOUR VESSEL.")
+                    .font(.system(size: 8, weight: .semibold))
+                    .tracking(0.3)
+                    .foregroundStyle(VSL.muted)
+            }
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: true, vertical: false)
         }
     }
 

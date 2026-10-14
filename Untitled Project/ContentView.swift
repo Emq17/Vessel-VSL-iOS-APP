@@ -6,16 +6,19 @@ import HealthKit
 struct ContentView: View {
     @StateObject var health = VSLHealthStore()
     @StateObject var focusStore = VSLFocusStore()
+    @StateObject var journalStore = VSLJournalStore()
     @Environment(\.scenePhase) var scenePhase
     @State var newFocusTask = ""
     @State var selectedFocusDay = Calendar.current.startOfDay(for: Date())
     @State var focusCalendarMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
-    @State var focusCalendarExpanded = false
+    @State var focusCalendarExpanded = true
     @State var editingFocusTask = false
     @State var editingFocusTaskID: UUID?
     @State var editedFocusTaskTitle = ""
 
     @State var tab: VSLTab = .focus
+    @State var journalDay = Calendar.current.startOfDay(for: .now)
+    @State var journalMonth = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
     @State var healthSection: VSLHealthSection = .weight
         @State var selectedWorkoutID: UUID?
 
@@ -43,6 +46,10 @@ struct ContentView: View {
     @State var sleepPeriod: VSLPeriod = .today
     @State var selectedSleepWakeDate: Date? = nil
     @State var sleepCalendarMonth: Date = .now
+    @State var sleepCalendarExpanded = true
+    @State var healthCalendarExpanded = true
+    @State var healthCalendarMonth: Date = .now
+    @State var selectedHealthDay: Date? = nil
     @State var nutritionCustomStart =
         Calendar.current.date(
             byAdding: .day,
@@ -133,6 +140,8 @@ struct ContentView: View {
                         healthContent
                     case .sleep:
                         sleepContent
+                    case .journal:
+                        journalContent
                     case .focus:
                         focusContent
                     }
