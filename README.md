@@ -1,4 +1,4 @@
-# VSL — Vessel
+# Vessel (VSL)
 
 **YOUR BODY. YOUR VESSEL.**
 
