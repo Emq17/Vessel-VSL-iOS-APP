@@ -43,34 +43,79 @@ extension ContentView {
                 ])
             }
 
-            notice(sleepPeriod == .today ? "Last Night uses the most recent available sleep recorded by Apple Health, including sleep before midnight. It is not a daily average." : "Sleep averages include recorded nights only. Sleep stages depend on your device and available Apple Health records.")
+            notice(sleepPeriod == .today ? "Last Night uses the most recent substantial sleep session available in Apple Health. Overlapping records are not counted twice." : "Sleep averages include recorded nights only. Sleep stages depend on your device and available Apple Health records.")
         }
     }
 
+    // Build actual sleep episodes from the recorded intervals rather than
+    // assigning individual samples to dates based on their end times.
+    // Sleep that crosses midnight (or noon) stays in one episode.
     var latestSleepSummary: (total: Double?, rem: Double?, deep: Double?, core: Double?) {
-        let values: Set<Int> = [
+        let asleepValues: Set<Int> = [
             HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue,
             HKCategoryValueSleepAnalysis.asleepCore.rawValue,
             HKCategoryValueSleepAnalysis.asleepDeep.rawValue,
             HKCategoryValueSleepAnalysis.asleepREM.rawValue
         ]
-        let asleep = sleepSamples.filter { values.contains($0.value) }
-        guard let latest = asleep.max(by: { $0.endDate < $1.endDate }) else {
-            return (nil, nil, nil, nil)
-        }
-        let calendar = Calendar.current
-        let night = calendar.startOfDay(for: latest.endDate.addingTimeInterval(-12 * 3600))
-        let segments = asleep.filter {
-            calendar.startOfDay(for: $0.endDate.addingTimeInterval(-12 * 3600)) == night
-        }
-        func duration(_ stage: HKCategoryValueSleepAnalysis) -> Double? {
-            let matching = segments.filter { $0.value == stage.rawValue }
-            return matching.isEmpty ? nil : matching.reduce(0) {
-                $0 + $1.endDate.timeIntervalSince($1.startDate)
+        let asleep = sleepSamples.filter {
+            asleepValues.contains($0.value) && $0.endDate > $0.startDate
+        }.sorted { $0.startDate < $1.startDate }
+        guard !asleep.isEmpty else { return (nil, nil, nil, nil) }
+
+        // Group samples into sleep episodes. Awake gaps shorter than four
+        // hours do not split a night's sleep into separate records.
+        var episodes: [[HKCategorySample]] = []
+        var current: [HKCategorySample] = []
+        var lastEnd = Date.distantPast
+        for sample in asleep {
+            if !current.isEmpty && sample.startDate.timeIntervalSince(lastEnd) > 4 * 3600 {
+                episodes.append(current)
+                current = []
+                lastEnd = .distantPast
             }
+            current.append(sample)
+            if sample.endDate > lastEnd { lastEnd = sample.endDate }
         }
-        let total = segments.reduce(0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-        return (total, duration(.asleepREM), duration(.asleepDeep), duration(.asleepCore))
+        if !current.isEmpty { episodes.append(current) }
+
+        // Prefer the latest substantial sleep episode to a short nap.
+        // If there is no substantial episode, use the most recent one.
+        func coveredDuration(_ samples: [HKCategorySample]) -> Double {
+            let ranges = samples.map { ($0.startDate, $0.endDate) }
+                .sorted { $0.0 < $1.0 }
+            guard let first = ranges.first else { return 0 }
+            var start = first.0
+            var end = first.1
+            var total = 0.0
+            for (nextStart, nextEnd) in ranges.dropFirst() {
+                if nextStart <= end {
+                    if nextEnd > end { end = nextEnd }
+                } else {
+                    total += end.timeIntervalSince(start)
+                    start = nextStart
+                    end = nextEnd
+                }
+            }
+            return total + end.timeIntervalSince(start)
+        }
+
+        let selected = episodes.reversed().first(where: {
+            coveredDuration($0) >= 3 * 3600
+        }) ?? episodes[episodes.count - 1]
+
+        // Health may contain overlapping Watch and third-party records.
+        // Choose one source for the episode rather than summing sources.
+        let bySource = Dictionary(grouping: selected) { $0.sourceRevision.source.bundleIdentifier }
+        let sourceSamples = bySource.values.max(by: {
+            coveredDuration($0) < coveredDuration($1)
+        }) ?? selected
+
+        func duration(_ stage: HKCategoryValueSleepAnalysis) -> Double? {
+            let matching = sourceSamples.filter { $0.value == stage.rawValue }
+            return matching.isEmpty ? nil : coveredDuration(matching)
+        }
+        return (coveredDuration(sourceSamples), duration(.asleepREM),
+                duration(.asleepDeep), duration(.asleepCore))
     }
 
     var sleepSummary: (

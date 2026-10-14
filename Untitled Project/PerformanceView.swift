@@ -7,18 +7,6 @@ extension ContentView {
     var performanceContent: some View {
         VStack(alignment: .leading, spacing: 17) {
 
-            if let latest = health.workouts.first {
-                Text("LATEST WORKOUT")
-                    .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(VSL.muted)
-                VSLMetricGrid(metrics: [
-                    VSLMetric(id: "Sport", value: sportName(latest.workoutActivityType.rawValue), unit: ""),
-                    VSLMetric(id: "Elapsed", value: VSLFormat.time(latest.endDate.timeIntervalSince(latest.startDate)), unit: "")
-                ])
-                Text(latest.startDate.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption).foregroundStyle(VSL.muted)
-            }
-
             if health.workouts.isEmpty {
                 notice("No workouts available from Apple Health yet.")
             } else {
@@ -36,6 +24,12 @@ extension ContentView {
                 .tint(.white)
                 .padding(10)
                 .background(VSL.card, in: RoundedRectangle(cornerRadius: 12))
+            }
+
+            if let workout = selectedWorkout {
+                VSLMetricGrid(metrics: [
+                    VSLMetric(id: "Elapsed", value: VSLFormat.time(workout.endDate.timeIntervalSince(workout.startDate)), unit: "")
+                ])
             }
 
             if selectedWorkout != nil {
@@ -94,13 +88,20 @@ extension ContentView {
 
             if custom {
                 VStack(spacing: 12) {
-                    Picker("Interval type", selection: $byDistance) {
-                        Text("Distance").tag(true)
-                        Text("Time").tag(false)
+                    if let workout = selectedWorkout,
+                       VSLAnalyzer.distanceType(workout.workoutActivityType) != nil {
+                        Picker("Interval type", selection: $byDistance) {
+                            Text("Distance").tag(true)
+                            Text("Time").tag(false)
+                        }
+                        .pickerStyle(.segmented)
+                    } else {
+                        Text("TIME INTERVAL")
+                            .font(.system(size: 11, weight: .heavy))
+                            .foregroundStyle(VSL.muted)
                     }
-                    .pickerStyle(.segmented)
 
-                    if byDistance {
+                    if byDistance && selectedWorkout.map({ VSLAnalyzer.distanceType($0.workoutActivityType) != nil }) == true {
                         Picker("Distance unit", selection: $distanceUnit) {
                             Text("Meters").tag("m")
                             Text("KM").tag("km")
@@ -692,7 +693,7 @@ extension ContentView {
         ) != nil
 
         startText = "0"
-        endText = distanceUnit == "m" ? "400" : "1"
+        endText = byDistance ? (distanceUnit == "m" ? "400" : "1") : "5:00"
 
         health.loadWorkout(workout) { response in
             guard selectedWorkoutID == requestedID else {
@@ -731,7 +732,7 @@ extension ContentView {
         let start: Date
         let end: Date
 
-        if byDistance {
+        if byDistance && VSLAnalyzer.distanceType(workoutData.workout.workoutActivityType) != nil {
             guard VSLAnalyzer.distanceType(
                 workoutData.workout.workoutActivityType
             ) != nil,
@@ -781,7 +782,7 @@ extension ContentView {
             end: end
         )
 
-        appliedRange = byDistance
+        appliedRange = (byDistance && VSLAnalyzer.distanceType(workoutData.workout.workoutActivityType) != nil)
             ? "\(startText) – \(endText) \(distanceUnit)"
             : "\(startText) – \(endText) TIME"
 
@@ -814,6 +815,7 @@ extension ContentView {
         case .kickboxing: return "Kickboxing"
         case .pilates: return "Pilates"
         case .stairClimbing: return "Stair Climbing"
+        case .stairStepper: return "Stair Stepper"
         case .coreTraining: return "Core Training"
         case .flexibility: return "Flexibility"
         case .martialArts: return "Martial Arts"
