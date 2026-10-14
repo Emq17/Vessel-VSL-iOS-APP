@@ -15,15 +15,11 @@ A native iOS app that brings training, health, sleep, focus, and journaling into
   <img src="screenshots/journal.png" width="185" alt="Journal and mood tracking" />
 </p>
 
-<!-- Optional: add a Nutrition screenshot once screenshots/nutrition.png exists.
-<p align="center"><img src="screenshots/nutrition.png" width="210" alt="Nutrition macro breakdown" /></p>
--->
-
 ## Features
 
 - **Focus** — Pomodoro sessions, date-based task management, and an expandable calendar.
 - **Performance** — Apple Health workout history with custom distance/time interval analysis and activity-specific metrics.
-- **Health** — Latest weight and historical trends; nutrition totals, daily averages, and macro distribution; medication tracking; blood pressure and heart rate insights.
+- **Health** — Latest weight and historical trends; latest logged nutrition, daily averages, and macro distribution; medication tracking; blood pressure and heart rate insights.
 - **Sleep** — Apple Health sleep-stage breakdown, interactive timeline inspection, and historical calendar views.
 - **Journal** — Dated entries, mood tracking, and attachments.
 
@@ -32,7 +28,7 @@ A native iOS app that brings training, health, sleep, focus, and journaling into
 - **Rolling date ranges:** 7D, 30D, and 90D mean consecutive calendar days ending today—not calendar months. Custom ranges are supported where available.
 - **Blood pressure:** Systolic/diastolic trend chart, interactive point inspection with measurement timestamps, range averages, and calendar activity indicators.
 - **Heart rate:** Latest measurements and range averages for heart rate, resting heart rate, HRV, VO₂ max, and cardio recovery.
-- **Nutrition:** Daily-average calories and macronutrients across selected periods, with a macro-energy donut chart.
+- **Nutrition:** Latest logged day, daily-average calories and macronutrients across rolling or custom ranges, and a macro-energy donut chart wherever recorded data is available.
 - **Weight:** Most recent recorded weigh-in remains visible independently of the selected historical trend range.
 
 ## Engineering
