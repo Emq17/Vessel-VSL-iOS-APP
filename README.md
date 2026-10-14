@@ -1,6 +1,5 @@
 # VSL — Vessel
 
-**BUILT FOR PROGRESS.**  
 **YOUR BODY. YOUR VESSEL.**
 
 A native iOS app that brings training, health, sleep, focus, and journaling into one minimal workspace. Built with **SwiftUI** and **Apple HealthKit**, VSL turns personal data into actionable views without the clutter.
