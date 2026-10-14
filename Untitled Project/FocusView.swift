@@ -4,7 +4,7 @@ import Combine
 extension ContentView {
     var focusContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-
+            VSLSection(title: "FOCUS", number: "01", color: VSL.lime)
             Text("MAKE TIME COUNT.")
                 .font(.system(size: 27, weight: .black))
 
@@ -48,7 +48,7 @@ extension ContentView {
             }
 
             Text(focusStore.timeLabel)
-                .font(.system(size: 61, weight: .black, design: .rounded))
+                .font(.system(size: 61, weight: .black, design: .default))
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
@@ -249,25 +249,16 @@ extension ContentView {
 
     private var focusCalendarCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    focusCalendarExpanded.toggle()
-                }
-            } label: {
-                HStack {
-                    Text("TASK CALENDAR")
-                        .font(.system(size: 12, weight: .black))
-                    Spacer()
-                    Text("\(selectedFocusDay.formatted(.dateTime.month(.abbreviated).day()))")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(VSL.muted)
-                    Image(systemName: focusCalendarExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundStyle(VSL.lime)
-                }
+            HStack {
+                Text("TASK CALENDAR")
+                    .font(.system(size: 12, weight: .black))
+                Spacer()
+                Text("\(selectedFocusDay.formatted(.dateTime.month(.abbreviated).day()))")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(VSL.muted)
             }
-            .buttonStyle(.plain)
 
-            if focusCalendarExpanded {
+            Group {
                 HStack {
                     Button {
                         shiftFocusMonth(-1)

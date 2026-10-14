@@ -26,19 +26,8 @@ extension ContentView {
                 .background(VSL.card, in: RoundedRectangle(cornerRadius: 12))
             }
 
-            if let workout = selectedWorkout {
-                VSLMetricGrid(metrics: [
-                    VSLMetric(id: "Elapsed", value: VSLFormat.time(workout.endDate.timeIntervalSince(workout.startDate)), unit: "")
-                ])
-            }
 
             if selectedWorkout != nil {
-                if let activity = selectedWorkout?.workoutActivityType,
-                   VSLAnalyzer.distanceType(activity) == nil {
-                    Text("Distance and pace are hidden for this activity. Heart rate, energy, and elapsed time remain available.")
-                        .font(.caption)
-                        .foregroundStyle(VSL.muted)
-                }
                 if loadingWorkout {
                     ProgressView("Loading workout...")
                         .tint(VSL.lime)
@@ -69,7 +58,7 @@ extension ContentView {
 
             HStack(spacing: 8) {
                 rangeButton(
-                    "FULL WORKOUT",
+                    "ALL",
                     selected: !custom
                 ) {
                     focusedField = nil
@@ -200,7 +189,7 @@ extension ContentView {
 
             TextField("0", text: value)
                 .keyboardType(
-                    byDistance
+                    (byDistance && selectedWorkout.map { VSLAnalyzer.distanceType($0.workoutActivityType) != nil } == true)
                         ? .decimalPad
                         : .numbersAndPunctuation
                 )
@@ -208,7 +197,7 @@ extension ContentView {
                 .font(.system(
                     size: 22,
                     weight: .heavy,
-                    design: .rounded
+                    design: .default
                 ))
                 .monospacedDigit()
                 .padding(13)
@@ -224,11 +213,9 @@ extension ContentView {
         _ result: VSLAnalysis
     ) -> some View {
         VStack(alignment: .leading, spacing: 13) {
-            VSLSection(
-                title: "PERFORMANCE METRICS",
-                number: "02",
-                color: VSL.lime
-            )
+            Text("WORKOUT METRICS")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(VSL.muted)
 
             VStack(alignment: .leading, spacing: 7) {
                 Text("ELAPSED TIME")
@@ -239,7 +226,7 @@ extension ContentView {
                     .font(.system(
                         size: 47,
                         weight: .black,
-                        design: .rounded
+                        design: .default
                     ))
                     .monospacedDigit()
             }
@@ -253,25 +240,24 @@ extension ContentView {
                 in: RoundedRectangle(cornerRadius: 14)
             )
 
-            VSLMetricGrid(metrics: performanceMetrics(result))
+            if !performanceMetrics(result).isEmpty {
+                VSLMetricGrid(metrics: performanceMetrics(result))
+            }
 
             if selectedWorkout?.workoutActivityType == .swimming {
                 firstMileCard
             }
 
-            VSLSection(
-                title: "TIME ANALYSIS",
-                number: "03",
-                color: VSL.lime
-            )
+            if selectedWorkout?.workoutActivityType == .swimming {
+                Text("SWIM BREAKDOWN")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(VSL.muted)
+                VSLMetricGrid(metrics: timingMetrics(result))
+            }
 
-            VSLMetricGrid(metrics: timingMetrics(result))
-
-            VSLSection(
-                title: "PHYSIOLOGY",
-                number: "04",
-                color: VSL.lime
-            )
+            Text("HEART & MOVEMENT")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(VSL.muted)
 
             VSLMetricGrid(metrics: physiologyMetrics(result))
         }
@@ -319,13 +305,7 @@ extension ContentView {
     func timingMetrics(
         _ result: VSLAnalysis
     ) -> [VSLMetric] {
-        var metrics = [
-            VSLMetric(
-                id: "Elapsed",
-                value: VSLFormat.time(result.duration),
-                unit: ""
-            )
-        ]
+        var metrics: [VSLMetric] = []
 
         if selectedWorkout?.workoutActivityType == .swimming {
             metrics += [
@@ -440,7 +420,7 @@ extension ContentView {
                 .font(.system(
                     size: 36,
                     weight: .black,
-                    design: .rounded
+                    design: .default
                 ))
                 .monospacedDigit()
 
@@ -491,11 +471,9 @@ extension ContentView {
 
     var milestoneSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VSLSection(
-                title: "MILESTONES",
-                number: "05",
-                color: VSL.lime
-            )
+            Text("DISTANCE CHECKPOINTS")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(VSL.muted)
 
             if let workoutData,
                VSLAnalyzer.distanceType(
@@ -545,7 +523,7 @@ extension ContentView {
                             .font(.system(
                                 size: 21,
                                 weight: .black,
-                                design: .rounded
+                                design: .default
                             ))
                             .monospacedDigit()
                     }
@@ -815,7 +793,6 @@ extension ContentView {
         case .kickboxing: return "Kickboxing"
         case .pilates: return "Pilates"
         case .stairClimbing: return "Stair Climbing"
-        case .stairStepper: return "Stair Stepper"
         case .coreTraining: return "Core Training"
         case .flexibility: return "Flexibility"
         case .martialArts: return "Martial Arts"

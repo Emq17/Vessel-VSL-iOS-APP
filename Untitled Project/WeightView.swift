@@ -7,8 +7,6 @@ extension ContentView {
     var weightContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             VSLSection(title: "WEIGHT", number: "01", color: VSL.lime)
-            Text("THE LONG GAME.")
-                .font(.system(size: 27, weight: .black))
             if let latest = weightPoints.last {
                 Text("LATEST WEIGH-IN · " + latest.0.formatted(date: .abbreviated, time: .shortened))
                     .font(.system(size: 11, weight: .heavy)).foregroundStyle(VSL.lime)
@@ -41,7 +39,6 @@ extension ContentView {
                 VSLMetric(id: weightPeriod == .today ? "Protein today" : "Logged protein / day", value: VSLFormat.number(totals[2].map { $0 / Double(days(in: .weight)) }), unit: "g"),
                 VSLMetric(id: weightPeriod == .today ? "Fat today" : "Logged fat / day", value: VSLFormat.number(totals[3].map { $0 / Double(days(in: .weight)) }), unit: "g")
             ])
-            notice("These are side-by-side trends, not proof of cause and effect. Weight also changes with hydration, sodium, glycogen, digestion, and measurement timing. Nutrition averages count every day in the period, including unlogged days.")
         }
     }
 
